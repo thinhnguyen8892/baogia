@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hồng Nhiên Powertools - Base v2 (Fixed API)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        @font-face { font-family: 'Times'; src: local('Times New Roman'); }
+        *, *::before, *::after { box-sizing: border-box; }
+        body { font-family: 'Times', serif; color: #1f2937; -webkit-print-color-adjust: exact; background-color: #e2e8f0; }
+        
+        /* Giao diện xem trên màn hình */
+        .a4-container {
+            width: 210mm; min-height: 297mm; 
+            padding: 15mm 20mm; /* Lề chuẩn màn hình */
+            margin: 2rem auto; background: white;
+            box-shadow: 0 10px 50px rgba(0,0,0,0.1); position: relative;
+        }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th { background: #f9fafb; border: 1px solid #000; padding: 6px; font-size: 12px; text-transform: uppercase; font-weight: bold; }
+        td { border: 1px solid #000; padding: 4px 8px; font-size: 14px; vertical-align: middle; }
+
+        input, textarea {
+            border: none; outline: none; width: 100%;
+            font-family: inherit; font-size: inherit;
+            background: transparent; resize: none; overflow: hidden;
+            display: block;
+        }
+        input:focus, textarea:focus { background: #f0f7ff; }
+
+        .label-text { font-weight: bold; width: 100px; font-style: italic; color: #374151; }
+        .data-line { border-bottom: 1px solid #e5e7eb; display: flex; align-items: flex-start; padding-bottom: 2px; margin-bottom: 4px; }
+
+        /* --- BỘ QUY TẮC IN ẤN TỰ ĐỘNG NÉN KHÔNG GIAN --- */
+        @media print {
+            @page { size: A4 portrait; margin: 0; }
+            
+            html, body { background: white !important; margin: 0 !important; padding: 0 !important; }
+            
+            .a4-container { 
+                width: 100% !important; 
+                margin: 0 !important; 
+                padding: 12mm 18mm !important; 
+                box-shadow: none !important; 
+                min-height: auto !important; 
+                border: none !important;
+            }
+            
+            .no-print { display: none !important; }
+            .data-line { border-bottom: none; }
+            input::placeholder, textarea::placeholder { color: transparent !important; }
+            
+            .print-compress-mb { margin-bottom: 8px !important; }
+            .print-compress-mt { margin-top: 10px !important; }
+            .print-compress-title { margin-bottom: 12px !important; font-size: 1.5rem !important; }
+            
+            .bank-block { margin-top: 12px !important; margin-bottom: 12px !important; }
+            .signature-block { margin-top: 15px !important; margin-bottom: 0px !important; }
+            .signature-space { margin-bottom: 60px !important; }
+            
+            tr, tfoot, .bank-block, .signature-block {
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+            }
+        }
+    </style>
+</head>
+<body class="pb-10">
+
+    <div class="no-print sticky top-0 bg-white/95 backdrop-blur-md border-b p-4 z-50 flex justify-center gap-4 shadow-sm">
+        <button onclick="generateNewNumber()" class="bg-slate-800 text-white px-5 py-2 rounded-full hover:bg-black font-bold transition flex items-center gap-2 shadow">
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+            Tạo số mới
+        </button>
+        <button id="btnExportImg" onclick="exportToImage()" class="bg-teal-600 text-white px-6 py-2 rounded-full hover:bg-teal-700 font-bold shadow-lg transition flex items-center gap-2">
+            📸 TẢI ẢNH ZALO
+        </button>
+        <button onclick="window.print()" class="bg-orange-600 text-white px-8 py-2 rounded-full hover:bg-orange-700 font-bold italic shadow-lg transition flex items-center gap-2">
+            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+            IN / XUẤT PDF
+        </button>
+    </div>
+
+    <div class="a4-container" id="main-doc">
+        <div class="border-b-2 border-black pb-2 mb-6 print-compress-mb">
+            <div class="flex justify-between items-end gap-4">
+                <div class="flex-1 overflow-hidden">
+                    <h1 class="text-[20px] font-bold uppercase whitespace-nowrap overflow-hidden tracking-tight">CÔNG TY TNHH HỒNG NHIÊN POWERTOOLS</h1>
+                    <p class="text-[13px] italic text-gray-600">53 Bùi Hữu Nghĩa, Phường Gia Định, TP. Hồ Chí Minh</p>
+                    <p class="text-[13px]">Hotline: <span class="font-bold">0909 602 225 - 0985 959 597</span></p>
+                </div>
+                <div class="text-right pb-1">
+                    <p class="text-[14px] font-bold uppercase tracking-tighter">MST: 0319270184</p>
+                </div>
+            </div>
+        </div>
+
+        <h2 class="text-2xl font-bold text-center mb-6 uppercase tracking-[0.3em] text-slate-800 print-compress-title">Báo giá</h2>
+
+        <div class="grid grid-cols-12 gap-6 mb-4 print-compress-mb">
+            <div class="col-span-7">
+                <div class="no-print flex items-center gap-2 bg-slate-100 p-1.5 rounded mb-3 w-fit">
+                    <span class="text-[10px] font-bold uppercase">Tra cứu MST:</span>
+                    <input type="text" id="custTaxId" class="bg-white border px-2 py-0.5 text-sm w-32 font-bold" placeholder="Nhập MST...">
+                    <button id="lookupBtn" onclick="lookupBusiness()" class="bg-blue-600 text-white text-[10px] px-3 py-1 rounded uppercase font-bold hover:bg-blue-700">Tra cứu</button>
+                </div>
+
+                <div class="data-line">
+                    <span class="label-text">Khách hàng:</span>
+                    <textarea id="custName" rows="1" class="font-bold uppercase flex-1" oninput="autoHeight(this)" placeholder="TÊN ĐƠN VỊ MUA HÀNG..."></textarea>
+                </div>
+                <div class="data-line">
+                    <span class="label-text">Địa chỉ:</span>
+                    <textarea id="custAddr" rows="1" class="flex-1 text-[13px] leading-tight" oninput="autoHeight(this)" placeholder="Địa chỉ giao hàng..."></textarea>
+                </div>
+                <div class="data-line">
+                    <span class="label-text">Điện thoại:</span>
+                    <input type="text" class="flex-1" placeholder="...">
+                </div>
+            </div>
+
+            <div class="col-span-5 border-l-2 border-gray-100 pl-4 space-y-1 text-[13px] flex flex-col justify-end pb-1">
+                <div class="flex justify-between italic"><span class="text-gray-500">Ngày:</span><input type="text" id="currentDate" class="text-right font-bold w-24"></div>
+                <div class="flex justify-between italic"><span class="text-gray-500">Số:</span><input type="text" id="quoteNumber" class="text-right font-bold text-blue-700 w-32"></div>
+                <div class="flex justify-between italic"><span class="text-gray-500">Hiệu lực:</span><input type="text" value="07 ngày" class="text-right w-24"></div>
+                <div class="flex justify-between pt-1 border-t mt-1"><span>Loại tiền:</span><span class="font-bold">VND</span></div>
+            </div>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th class="w-10 text-center">STT</th>
+                    <th class="w-24">Mã hàng</th>
+                    <th class="">Tên hàng / Quy cách chi tiết</th>
+                    <th class="w-14">ĐVT</th>
+                    <th class="w-12">SL</th>
+                    <th class="w-24 text-center">Đơn giá</th>
+                    <th class="w-28 text-center">Thành tiền</th>
+                    <th class="w-8 no-print border-none"></th>
+                </tr>
+            </thead>
+            <tbody id="productBody"></tbody>
+            
+            <tfoot class="font-bold text-[14px]">
+                <tr>
+                    <td colspan="6" class="text-right uppercase py-1.5 border-t-2 border-t-black whitespace-nowrap">Cộng tiền hàng:</td>
+                    <td id="subtotal" class="text-right py-1.5 border-t-2 border-t-black">0</td>
+                    <td class="no-print border-none"></td>
+                </tr>
+                <tr>
+                    <td colspan="6" class="text-right uppercase text-gray-600 py-1.5 whitespace-nowrap">
+                        <div class="flex justify-end items-center gap-1">
+                            Thuế GTGT (<input type="number" id="taxPercent" value="8" oninput="updateTotal()" class="w-6 text-center font-bold no-print border-b border-gray-300">
+                            <span class="print:inline hidden font-bold"><span id="taxValuePrint">8</span></span>%) :
+                        </div>
+                    </td>
+                    <td id="taxAmount" class="text-right text-gray-600 py-1.5">0</td>
+                    <td class="no-print border-none"></td>
+                </tr>
+                <tr class="bg-slate-50">
+                    <td colspan="6" class="text-right uppercase py-2 border-t-2 border-black text-[14px] whitespace-nowrap">Tổng cộng thanh toán:</td>
+                    <td id="grandTotal" class="text-right text-red-700 py-2 border-t-2 border-black text-[16px]">0</td>
+                    <td class="no-print border-none"></td>
+                </tr>
+            </tfoot>
+        </table>
+
+        <button onclick="addRow()" class="no-print mt-3 bg-slate-100 hover:bg-slate-200 text-slate-800 px-3 py-1 rounded text-xs font-bold transition">+ THÊM SẢN PHẨM</button>
+
+        <div class="mt-6 flex items-start gap-4 mb-6 bank-block">
+            <div class="flex-1 bg-slate-50 p-3 border rounded-xl shadow-inner border-slate-100">
+                <p class="font-bold text-[12px] text-blue-950 uppercase border-b border-slate-200 mb-2 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                    Thông tin tài khoản ngân hàng
+                </p>
+                <div class="text-[13px] space-y-1">
+                    <p class="flex justify-between w-full pr-4"><span>Đơn vị hưởng thụ:</span> <span class="font-bold uppercase text-right">CÔNG TY TNHH HỒNG NHIÊN POWERTOOLS</span></p>
+                    <p class="flex justify-between w-full pr-4"><span>Số tài khoản:</span> <span class="font-bold text-[16px] tracking-widest text-blue-900 text-right">3887986</span></p>
+                    <p class="flex justify-between w-full pr-4"><span>Tại ngân hàng:</span> <span class="font-bold text-blue-950 text-right">ACB - Chi nhánh TÂN ĐỊNH</span></p>
+                </div>
+            </div>
+            <div class="w-1/3 pt-1 border-l-4 pl-3 border-slate-800 bg-white">
+                <p class="text-[13px] italic leading-tight">Số tiền bằng chữ: <br><span id="amountInWords" class="not-italic font-bold text-slate-800">Không đồng.</span></p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 text-center text-[14px] mt-10 mb-4 signature-block">
+            <div>
+                <p class="font-bold uppercase mb-20 signature-space tracking-widest">Người lập báo giá</p>
+                <div class="w-40 border-t border-black mx-auto pt-1 italic text-gray-400 font-serif text-[12px]">[Chưa ký]</div>
+            </div>
+            <div>
+                <p class="font-bold uppercase mb-20 signature-space text-slate-800 tracking-wider">Giám đốc duyệt</p>
+                <div class="w-40 border-t border-black mx-auto pt-1 font-bold uppercase text-orange-600 text-[13px]">Hồng Nhiên</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function exportToImage() {
+            const doc = document.getElementById('main-doc');
+            const btn = document.getElementById('btnExportImg');
+            const originalText = btn.innerHTML;
+            
+            btn.innerHTML = "⏳ Đang tạo ảnh...";
+            btn.disabled = true;
+
+            const inputs = document.querySelectorAll('input, textarea');
+            inputs.forEach(input => input.classList.add('placeholder-transparent'));
+
+            html2canvas(doc, {
+                scale: 2, 
+                useCORS: true, 
+                backgroundColor: "#ffffff"
+            }).then(canvas => {
+                inputs.forEach(input => input.classList.remove('placeholder-transparent'));
+                const imgData = canvas.toDataURL('image/png');
+                const quoteNum = document.getElementById('quoteNumber').value || 'BG';
+                
+                const link = document.createElement('a');
+                link.download = `Hong-Nhien-${quoteNum}.png`;
+                link.href = imgData;
+                link.click();
+
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }).catch(err => {
+                alert("Lỗi khi tạo ảnh!");
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                inputs.forEach(input => input.classList.remove('placeholder-transparent'));
+            });
+        }
+
+        function autoHeight(el) {
+            el.style.height = 'auto';
+            el.style.height = el.scrollHeight + 'px';
+        }
+
+        // HÀM TRA CỨU API MỚI - SIÊU ỔN ĐỊNH
+        async function lookupBusiness() {
+            const mst = document.getElementById('custTaxId').value.trim();
+            if(!mst) return alert("Vui lòng nhập Mã số thuế để tra cứu!");
+            
+            const btn = document.getElementById('lookupBtn');
+            btn.innerText = "Đang tải..."; 
+            btn.disabled = true;
+
+            const fillData = (name, addr) => {
+                const nameField = document.getElementById('custName');
+                const addrField = document.getElementById('custAddr');
+                nameField.value = name; 
+                addrField.value = addr;
+                autoHeight(nameField); 
+                autoHeight(addrField);
+            };
+
+            const targetUrl = 'https://api.vietqr.io/v2/business/' + mst;
+
+            try {
+                // Thử cách 1: Dùng corsproxy.io (Mạnh và ổn định nhất cho file cục bộ)
+                const response = await fetch('https://corsproxy.io/?' + encodeURIComponent(targetUrl));
+                const data = await response.json();
+                
+                if (data.code === "00" && data.data) {
+                    fillData(data.data.name, data.data.address);
+                } else {
+                    alert("Không tìm thấy thông tin công ty! Vui lòng kiểm tra lại từng số của MST.");
+                }
+            } catch (error) {
+                // Thử cách 2: Gọi thẳng nếu Proxy 1 lỗi
+                try {
+                    const res2 = await fetch(targetUrl);
+                    const data2 = await res2.json();
+                    if (data2.code === "00" && data2.data) {
+                        fillData(data2.data.name, data2.data.address);
+                    } else {
+                        alert("Không tìm thấy công ty! Vui lòng kiểm tra lại MST.");
+                    }
+                } catch (err2) {
+                    alert("Lỗi mạng hoặc hệ thống dữ liệu quốc gia đang bảo trì. Vui lòng nhập tay lần này nhé!");
+                }
+            } finally {
+                btn.innerText = "Tra cứu"; 
+                btn.disabled = false;
+            }
+        }
+
+        function generateNewNumber() {
+            const now = new Date();
+            const dateStr = now.getFullYear().toString().slice(-2) + (now.getMonth() + 1).toString().padStart(2, '0') + now.getDate().toString().padStart(2, '0');
+            let count = localStorage.getItem('HN_Quote_BaseV2') || 0;
+            count = parseInt(count) + 1;
+            localStorage.setItem('HN_Quote_BaseV2', count);
+            document.getElementById('quoteNumber').value = `BG-${dateStr}-${count.toString().padStart(2, '0')}`;
+        }
+
+        document.getElementById('currentDate').value = new Date().toLocaleDateString('vi-VN');
+
+        function addRow() {
+            const tbody = document.getElementById('productBody');
+            const stt = tbody.rows.length + 1;
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td class="text-center font-bold text-gray-400 text-sm">${stt}</td>
+                <td><input type="text" placeholder="..."></td>
+                <td><textarea rows="1" class="w-full py-1 leading-snug" oninput="autoHeight(this)" placeholder="Tên sản phẩm..."></textarea></td>
+                <td class="text-center"><input type="text" value="Cái" class="text-center"></td>
+                <td class="text-center"><input type="number" class="text-center qty" value="1" oninput="updateTotal()"></td>
+                <td class="text-right"><input type="number" class="text-right price font-medium" value="0" oninput="updateTotal()"></td>
+                <td class="text-right font-bold line-total">0</td>
+                <td class="no-print border-none text-center"><button onclick="this.parentElement.parentElement.remove(); updateTotal();" class="text-red-400 hover:text-red-600 font-bold">✕</button></td>
+            `;
+            tbody.appendChild(row);
+        }
+
+        function updateTotal() {
+            let subtotal = 0;
+            document.querySelectorAll('#productBody tr').forEach(row => {
+                const qty = parseFloat(row.querySelector('.qty').value) || 0;
+                const price = parseFloat(row.querySelector('.price').value) || 0;
+                const total = qty * price;
+                row.querySelector('.line-total').innerText = total.toLocaleString('vi-VN');
+                subtotal += total;
+            });
+            
+            const taxRate = parseFloat(document.getElementById('taxPercent').value) / 100 || 0;
+            const taxAmount = Math.round(subtotal * taxRate);
+            const grand = subtotal + taxAmount;
+            
+            document.getElementById('subtotal').innerText = subtotal.toLocaleString('vi-VN');
+            document.getElementById('taxAmount').innerText = taxAmount.toLocaleString('vi-VN');
+            document.getElementById('grandTotal').innerText = grand.toLocaleString('vi-VN');
+            document.getElementById('taxValuePrint').innerText = document.getElementById('taxPercent').value;
+            document.getElementById('amountInWords').innerText = docSoTien(grand);
+        }
+
+        function docSoTien(n){
+            if(n===0) return "Không đồng.";
+            const units = ["", " nghìn", " triệu", " tỷ"];
+            const convert3 = (num) => {
+                const words = ["không", "một", "hai", "ba", "bốn", "năm", "sáu", "bảy", "tám", "chín"];
+                let res = "";
+                let h = Math.floor(num / 100); let t = Math.floor((num % 100) / 10); let u = num % 10;
+                if(h>0) res += words[h] + " trăm ";
+                if(t===0 && u>0 && h>0) res += "linh ";
+                if(t>1) res += words[t] + " mươi ";
+                if(t===1) res += "mười ";
+                if(u===1 && t>1) res += "mốt";
+                else if(u===5 && t>0) res += "lăm";
+                else if(u>0) res += words[u];
+                return res;
+            };
+            let res = ""; let unitIdx = 0; let tempN = n;
+            while(tempN > 0){
+                let chunk = tempN % 1000;
+                if(chunk > 0) res = convert3(chunk) + units[unitIdx] + " " + res;
+                tempN = Math.floor(tempN / 1000); unitIdx++;
+            }
+            return res.trim().charAt(0).toUpperCase() + res.trim().slice(1) + " đồng chẵn.";
+        }
+
+        generateNewNumber(); for(let i=0; i<5; i++) addRow();
+    </script>
+</body>
+</html>
