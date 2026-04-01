@@ -59,19 +59,22 @@
 </head>
 <body class="pb-10 mode-baogia" id="appBody">
 
-    <div class="no-print sticky top-0 bg-white/95 backdrop-blur-md border-b p-4 z-50 flex justify-center gap-4 shadow-sm flex-wrap">
-        <button onclick="toggleDocumentMode()" id="btnToggleMode" class="bg-indigo-600 text-white px-6 py-2 rounded-full hover:bg-indigo-700 font-bold transition flex items-center gap-2 shadow-lg ring-2 ring-indigo-300">
+    <div class="no-print sticky top-0 bg-white/95 backdrop-blur-md border-b p-4 z-50 flex justify-center gap-3 shadow-sm flex-wrap">
+        <button onclick="toggleDocumentMode()" id="btnToggleMode" class="bg-indigo-600 text-white px-5 py-2 rounded-full hover:bg-indigo-700 font-bold transition flex items-center gap-2 shadow-lg ring-2 ring-indigo-300 text-sm">
             🔄 CHUYỂN SANG GIAO HÀNG
         </button>
-        <div class="w-px bg-gray-300 mx-2"></div>
-        <button onclick="generateNewNumber()" class="bg-slate-800 text-white px-5 py-2 rounded-full hover:bg-black font-bold transition flex items-center gap-2 shadow">
+        <div class="w-px bg-gray-300 mx-1"></div>
+        <button onclick="generateNewNumber()" class="bg-slate-800 text-white px-4 py-2 rounded-full hover:bg-black font-bold transition flex items-center gap-2 shadow text-sm">
             Tạo số mới
         </button>
-        <button id="btnExportImg" onclick="exportToImage()" class="bg-teal-600 text-white px-6 py-2 rounded-full hover:bg-teal-700 font-bold shadow-lg transition flex items-center gap-2">
-            📸 TẢI ẢNH ZALO
+        <button id="btnExportImg" onclick="exportToImage()" class="bg-teal-600 text-white px-5 py-2 rounded-full hover:bg-teal-700 font-bold shadow-lg transition flex items-center gap-2 text-sm">
+            📸 TẢI ẢNH
         </button>
-        <button onclick="window.print()" class="bg-orange-600 text-white px-8 py-2 rounded-full hover:bg-orange-700 font-bold italic shadow-lg transition flex items-center gap-2">
-            IN / XUẤT PDF
+        <button id="btnCopyMsg" onclick="copyTinNhan()" class="bg-green-600 text-white px-5 py-2 rounded-full hover:bg-green-700 font-bold shadow-lg transition flex items-center gap-2 text-sm">
+            💬 COPY TIN NHẮN
+        </button>
+        <button onclick="window.print()" class="bg-orange-600 text-white px-5 py-2 rounded-full hover:bg-orange-700 font-bold italic shadow-lg transition flex items-center gap-2 text-sm">
+            IN / PDF
         </button>
     </div>
 
@@ -239,6 +242,53 @@
                 btn.classList.replace('bg-blue-600', 'bg-indigo-600');
                 quoteInput.value = quoteInput.value.replace('GH-', 'BG-');
             }
+        }
+
+        // HÀM COPY TIN NHẮN CHỐT SALE
+        function copyTinNhan() {
+            // Lấy dữ liệu từ form
+            let tenKhach = document.getElementById('custName').value.trim();
+            if(!tenKhach) tenKhach = "Quý khách";
+            
+            const soBaoGia = document.getElementById('quoteNumber').value;
+            const tongTien = document.getElementById('grandTotal').innerText;
+            const isGH = document.getElementById('appBody').classList.contains('mode-bbgh');
+            
+            const loaiGiayTo = isGH ? 'biên bản giao hàng' : 'báo giá';
+
+            // Soạn nội dung kịch bản
+            const tinNhan = 
+`Dạ em chào anh/chị ${tenKhach},
+
+Em gửi anh/chị bản ${loaiGiayTo} chi tiết số ${soBaoGia}.
+👉 Tổng thanh toán đơn hàng của mình là: ${tongTien} VNĐ.
+
+Anh/chị xem qua ảnh đính kèm nhé. Nếu thông tin mã máy và số lượng đã chính xác, anh/chị chốt đơn giúp em để em cho kỹ thuật soạn máy và giao hàng sớm cho mình luôn ạ!
+
+💳 Thông tin thanh toán bên em:
+- Số tài khoản: 3887986
+- Ngân hàng: ACB (Chi nhánh Tân Định)
+- Tên công ty: CÔNG TY TNHH HỒNG NHIÊN POWERTOOLS
+
+Cảm ơn anh/chị đã tin tưởng máy móc của Hồng Nhiên Powertools!`;
+
+            // Copy vào Clipboard
+            navigator.clipboard.writeText(tinNhan).then(() => {
+                const btn = document.getElementById('btnCopyMsg');
+                const originalText = btn.innerHTML;
+                
+                // Hiệu ứng đổi màu nút báo thành công
+                btn.innerHTML = '✅ ĐÃ COPY KỊCH BẢN!';
+                btn.classList.replace('bg-green-600', 'bg-emerald-500');
+                
+                // Trả lại nút cũ sau 3 giây
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.classList.replace('bg-emerald-500', 'bg-green-600');
+                }, 3000);
+            }).catch(err => {
+                alert('Trình duyệt của bạn chưa hỗ trợ copy tự động. Vui lòng thử lại!');
+            });
         }
 
         function exportToImage() {
